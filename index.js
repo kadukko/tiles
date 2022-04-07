@@ -1,7 +1,7 @@
 const fs = require("fs");
 const sharp = require("sharp");
 
-const process = async (filename) => {
+const process = async (filename, scaleLimit = 2) => {
   let image = await sharp(filename).png();
   const metadata = await image.metadata();
 
@@ -9,12 +9,31 @@ const process = async (filename) => {
   image = await image.resize(size, size, { fit: "contain" });
 
   for (let z = 1; z <= 8; z++) {
-    const newSize = z * 2 * 256;
+    const fixScale =
+      (512 * 2 ** (z - 1)) / Math.min(metadata.width, metadata.height);
 
-    const resizedImage = await image.resize(newSize, newSize);
+    const boardSize = {
+      width: metadata.width * fixScale,
+      height: metadata.height * fixScale,
+    };
 
-    for (let y = 0; y < newSize / 256; y++) {
-      for (let x = 0; x < newSize / 256; x++) {
+    const countTilesX = Math.ceil(boardSize.width / 256);
+    const countTilesY = Math.ceil(boardSize.height / 256);
+
+    const newWidth = countTilesX * 256;
+    const newHeight = countTilesY * 256;
+
+    const scale = Math.max(
+      newWidth / metadata.width,
+      newHeight / metadata.height
+    );
+
+    if (scale > scaleLimit) continue;
+
+    const resizedImage = await image.resize(newWidth, newHeight);
+
+    for (let y = 0; y < countTilesY; y++) {
+      for (let x = 0; x < countTilesX; x++) {
         const tile = await resizedImage.extract({
           left: x * 256,
           top: y * 256,
