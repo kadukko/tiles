@@ -6,7 +6,11 @@ const process = async (filename) => {
   const metadata = await image.metadata();
 
   const size = Math.max(metadata.width, metadata.height);
-  image = await image.resize(size, size, { fit: "contain" });
+
+  image = await image.resize(size, size, {
+    fit: "contain",
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  });
 
   for (let z = 1; z <= 8; z++) {
     const newSize = z * 2 * 256;
