@@ -1,7 +1,7 @@
 const fs = require("fs");
 const sharp = require("sharp");
 
-const process = async (filename) => {
+const process = async (filename, scaleLimit = 2) => {
   let image = await sharp(filename).png();
   const metadata = await image.metadata();
 
@@ -12,8 +12,10 @@ const process = async (filename) => {
     background: { r: 0, g: 0, b: 0, alpha: 0 },
   });
 
-  for (let z = 1; z <= 8; z++) {
-    const newSize = z * 2 * 256;
+  for (let z = 0; z < 8; z++) {
+    const newSize = 256 * 2 ** z;
+
+    if (newSize / size > scaleLimit) continue;
 
     const resizedImage = await image.resize(newSize, newSize);
 
