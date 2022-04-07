@@ -1,0 +1,43 @@
+const fs = require("fs");
+const sharp = require("sharp");
+
+const process = async (filename) => {
+  let image = await sharp(filename).png();
+  const metadata = await image.metadata();
+
+  const size = Math.max(metadata.width, metadata.height);
+  image = await image.resize(size, size, { fit: "contain" });
+
+  for (let z = 1; z <= 8; z++) {
+    const newSize = z * 2 * 256;
+
+    const resizedImage = await image.resize(newSize, newSize);
+
+    for (let y = 0; y < newSize / 256; y++) {
+      for (let x = 0; x < newSize / 256; x++) {
+        const tile = await resizedImage.extract({
+          left: x * 256,
+          top: y * 256,
+          width: 256,
+          height: 256,
+        });
+
+        await tile.toFile(`./output/${z}_${y}_${x}.png`);
+      }
+    }
+  }
+};
+
+if (fs.existsSync("./output")) {
+  console.log("Deleting output folder");
+  fs.rmSync("./output", { recursive: true, force: true });
+}
+
+fs.mkdirSync("./output");
+
+const startsAt = Date.now();
+
+process("image.png").then(() => {
+  const time = Date.now() - startsAt;
+  console.log(`finished ${time} ms`);
+});
